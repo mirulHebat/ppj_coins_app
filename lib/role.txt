@@ -1,0 +1,257 @@
+  Future<String> assignRole () async
+  {
+      UserDetail userDetail = UserDetail();
+      List<String> userDetails = userDetail.getUserDetails();
+      String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+      String role_id = userDetails.isNotEmpty ? userDetails[1] : '';
+        if (userDetails.isNotEmpty) {
+    // Accessing the first element
+
+        } else {
+
+        }
+
+        http.Response response;
+        var usell = Uri.encodeQueryComponent('{"bims_access_id":"$ifleetData","action":"LIST_ITEM_GROUP","user_id":"$role_id","details":["full_name"]}');
+          Map<String, String> headersModified = {};
+          if (userDetails.isNotEmpty) {
+            headersModified['cookie'] = userDetails[3];
+          }
+
+           response = await http.get(Uri.parse('https://lawanow.com/bims-web/User?param=$usell'), headers: headersModified);
+             if (response.statusCode == 200) {
+
+    // Parse the response body as JSON
+    Map<String, dynamic> result = json.decode(response.body);
+
+    // Handle the response data
+    if (result['success'] == true) {
+      print('done success submit assign role');
+      print(result);
+      String fullName="";
+      fullName = result['results']?[0]['full_name'];
+      return fullName;
+    } else {
+
+      print(response.body);
+      return "";
+
+    }
+  } else {
+      print('response.body');
+      print(response.body);
+      return "";
+
+    // Handle the case where the request failed
+    print('Request failed with status code: ${response.statusCode}');
+// Return 0 if request failed
+  }
+   
+  }
+
+
+
+
+
+
+
+  #include "../inc/kernel.h"
+#include "../inc/hal_robo.h"
+
+#define TASK_STK_SZ 128
+#define TASK_START_PRIO 1
+#define TASK_CHKCOLLIDE_PRIO 2
+#define TASK_CTRLMOTOR_PRIO 3
+#define TASK_NAVIG_PRIO 4
+#define TASK_LINE_FOLLOW_PRIO 5
+
+OS_STK TaskStartStk[TASK_STK_SZ];
+OS_STK ChkCollideStk[TASK_STK_SZ];
+OS_STK CtrlmotorStk[TASK_STK_SZ];
+OS_STK NavigStk[TASK_STK_SZ];
+OS_STK LineFollowStk[TASK_STK_SZ];
+
+struct robostate {
+    int rspeed;
+    int lspeed;
+    char obstacle;
+} myrobot;
+
+void CheckCollision(void *data) {
+    for (;;) {
+        myrobot.obstacle = robo_proxSensor();
+        OSTimeDlyHMSM(0, 0, 0, 100);
+    }
+}
+
+void CntrlMotors(void *data) {
+    for (;;) {
+        robo_motorSpeed(myrobot.lspeed, myrobot.rspeed);
+        OSTimeDlyHMSM(0, 0, 0, 10);
+    }
+}
+
+/* --- Task for navigating robot ---- */
+void Navig(void *data)
+{
+    int lost_line_counter = 0; // Counter to detect how long the robot has been off the line
+
+    for (;;)
+    {
+        int line_value = robo_lineSensor();
+        int prox_value = robo_proxSensor();
+        int light_value = robo_lightSensor();
+
+        // Handle the proximity sensor for obstacle avoidance
+        if (prox_value == 1)
+        {
+            // Obstacle detected, navigate around it
+            myrobot.rspeed = -50;   // Reverse right motor
+            myrobot.lspeed = 50;    // Forward left motor
+            robo_motorSpeed(myrobot.lspeed, myrobot.rspeed);
+            OSTimeDlyHMSM(0, 0, 0, 300); // Delay for a short duration to avoid the obstacle
+
+            // Move forward after avoiding obstacle
+            myrobot.rspeed = 50;
+            myrobot.lspeed = 50;
+        }
+        // Handle the light sensor for the green circle
+        else if (light_value > 80)
+        {
+            // Bright light detected, alter path
+            myrobot.rspeed = 60;
+            myrobot.lspeed = 10;
+        }
+        else
+        {
+            switch (line_value)
+            {
+                case 0b111: // All sensors on line
+                    myrobot.rspeed = 20;
+                    myrobot.lspeed = 20;
+                    lost_line_counter = 0;
+                    break;
+                case 0b110: // Right sensor off line
+                    myrobot.rspeed = 80;
+                    myrobot.lspeed = 30;
+                    lost_line_counter = 0;
+                    break;
+                case 0b011: // Left sensor off line
+                    myrobot.rspeed = 10;
+                    myrobot.lspeed = 90;
+                    lost_line_counter = 0;
+                    break;
+                case 0b100: // Far right sensor off line
+                    myrobot.rspeed = 90;
+                    myrobot.lspeed = 10;
+                    lost_line_counter = 0;
+                    break;
+                case 0b001: // Far left sensor off line
+                    myrobot.rspeed = 10;
+                    myrobot.lspeed = 90;
+                    lost_line_counter = 0;
+                    break;
+                case 0b010: // Middle sensor on line
+                    myrobot.rspeed = 20;
+                    myrobot.lspeed = 20;
+                    lost_line_counter = 0;
+                    break;
+                case 0b000: // All sensors off line
+                    lost_line_counter++;
+                    if (lost_line_counter > 20) // If off the line for a significant time
+                    {
+                        // Spin in place to search for the line
+                        myrobot.rspeed = 0;
+                        myrobot.lspeed = 50;
+                    }
+                    else
+                    {
+                        myrobot.rspeed = 0;
+                        myrobot.lspeed = 0;
+                    }
+                    break;
+                default:
+                    myrobot.rspeed = 20;
+                    myrobot.lspeed = 20;
+                    lost_line_counter = 0;
+                    break;
+            }
+        }
+
+        robo_motorSpeed(myrobot.lspeed, myrobot.rspeed);
+        OSTimeDlyHMSM(0, 0, 0, 50); // Delay to control task period
+    }
+}
+
+
+void LineTask(void *data) {
+    for (;;) {
+        if (myrobot.obstacle == 0) {
+            int line_value = robo_lineSensor();
+            switch (line_value) {
+                case 0b111:
+                    myrobot.rspeed = 30;
+                    myrobot.lspeed = 30;
+                    break;
+                case 0b110:
+                    myrobot.rspeed = 60;
+                    myrobot.lspeed = 40;
+                    break;
+                case 0b011:
+                    myrobot.rspeed = 40;
+                    myrobot.lspeed = 60;
+                    break;
+                case 0b100:
+                    myrobot.rspeed = 70;
+                    myrobot.lspeed = 30;
+                    break;
+                case 0b001:
+                    myrobot.rspeed = 30;
+                    myrobot.lspeed = 70;
+                    break;
+                case 0b000:
+                    myrobot.rspeed = 0;
+                    myrobot.lspeed = 0;
+                    break;
+                default:
+                    myrobot.rspeed = 50;
+                    myrobot.lspeed = 50;
+                    break;
+            }
+        } else {
+            myrobot.rspeed = 0;
+            myrobot.lspeed = 0;
+        }
+        OSTimeDlyHMSM(0, 0, 0, 50);
+    }
+}
+
+void TaskStart(void *data) {
+    OS_ticks_init();
+    OSTaskCreate(CheckCollision, (void *)0, &ChkCollideStk[TASK_STK_SZ - 1], TASK_CHKCOLLIDE_PRIO);
+    OSTaskCreate(CntrlMotors, (void *)0, &CtrlmotorStk[TASK_STK_SZ - 1], TASK_CTRLMOTOR_PRIO);
+    OSTaskCreate(Navig, (void *)0, &NavigStk[TASK_STK_SZ - 1], TASK_NAVIG_PRIO);
+    OSTaskCreate(LineTask, (void *)0, &LineFollowStk[TASK_STK_SZ - 1], TASK_LINE_FOLLOW_PRIO);
+
+    while (1) {
+        OSTimeDlyHMSM(0, 0, 5, 0);
+        robo_LED_toggle();
+    }
+}
+
+int main(void) {
+    robo_Setup();
+    OSInit();
+
+    robo_motorSpeed(0, 0);
+    myrobot.rspeed = 0;
+    myrobot.lspeed = 0;
+    myrobot.obstacle = 0;
+
+    OSTaskCreate(TaskStart, (void *)0, &TaskStartStk[TASK_STK_SZ - 1], TASK_START_PRIO);
+
+    robo_Honk();
+    robo_wait4goPress();
+    OSStart();
+    while (1);
+}
