@@ -17,7 +17,7 @@ import 'package:ppj_coins_app/riverpod/utilities/strings.dart';
 import 'dart:convert';
 import 'package:ppj_coins_app/riverpod/login/userModel.dart';
 import '../riverpod/utilities/strings.dart';
-import 'package:ppj_coins_app/lib/Assignment.dart';
+import 'package:ppj_coins_app/Assignment.dart';
 import 'package:ppj_coins_app/Fuel_Entries.dart';
 import 'package:ppj_coins_app/fuel_detail.dart';
 import 'package:ppj_coins_app/fuelData.dart';
