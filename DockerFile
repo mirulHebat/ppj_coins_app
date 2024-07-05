@@ -18,4 +18,4 @@ RUN dart compile exe lib/main.dart -o /ppj_coins_app/lib/main
 EXPOSE 9090
 
 # Run the Dart application
-ENTRYPOINT ["./bin/main"]
+ENTRYPOINT ["/ppj_coins_app/main"]
