@@ -1,0 +1,21 @@
+# Use the Dart image from the official Dart repository
+FROM dart:latest
+
+# Set the working directory in the container
+WORKDIR /appSC
+
+# Copy the pubspec files and download dependencies
+COPY pubspec.yaml ./
+RUN dart pub get
+
+# Copy the rest of the application code
+COPY . .
+
+# Build the Dart application (if necessary)
+RUN dart compile exe lib/main.dart -o /ppj_coins_app/lib/main
+
+# Expose the port your application will run on
+EXPOSE 9090
+
+# Run the Dart application
+ENTRYPOINT ["./bin/main"]
