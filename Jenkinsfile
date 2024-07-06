@@ -1,4 +1,4 @@
-@Library('ppj_coins_app@master') _
+@Library('global-libraries@master') _
 
 import groovy.json.JsonOutput
 import firm.project.Env
