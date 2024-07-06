@@ -1018,3 +1018,16 @@ class _PurchaseOrderPageState extends ConsumerState<purchaseOrderDetailPage> {
      );
   }
 }
+
+class saveItems{
+  String title = '';
+  String profId = '';
+  String profType = '';
+  String profName= '';
+  String pdid = '';
+  String pdNo = '';
+  String appDate = '';
+  String rejDate = '';
+
+  saveItems({required this.title,required this.profId,required this.profType,required this.profName,required this.pdid,required this.pdNo,required this.appDate,required this.rejDate});
+}

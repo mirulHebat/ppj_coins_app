@@ -1562,15 +1562,15 @@ class editionServiceState extends ConsumerState<editingService>{
                 {  
                   print('nilai fault ${Insertworkline[y].data_collect[i][2]}');
                   
-                  String faulty =await f_Service(). createFaults(vehiclefield.text,Insertworkline[y].data_collect[i][0],Insertworkline[y].data_collect[i][2],ref,Insertworkline[y].data_collect[i][3]);
+                  String faulty =await faultCreation(). createFaults(vehiclefield.text,Insertworkline[y].data_collect[i][0],Insertworkline[y].data_collect[i][2],ref,Insertworkline[y].data_collect[i][3]);
                   fault_id.add(faulty);
 
                 }
                                                                   
-                   inspectionItem=await f_Service().createInspect(Insertworkline[y].insp_stats,fault_id,vehiclefield.text,Insertworkline[y].inspII_id);
-                   inspectionform=await f_Service().createIns_form(inspectionItem,fault_id,vehiclefield.text,isIssue,vehicleId,Insertworkline[y].inspIF_edit_id);
-                   inspectionSubmit=await f_Service().createIns_Submit(inspectionform,vehiclefield.text,Insertworkline[y].insp_item);
-                   resultIssue=await f_Service(). createIssues(Insertworkline[y].resolving,Insertworkline[y].due_date,inspectionSubmit,fault_id,vehiclefield.text,isIssue,Insertworkline[y].start_at,Insertworkline[y].summary,Insertworkline[y].issue_id);
+                   inspectionItem=await inspectCreation().createInspect(Insertworkline[y].insp_stats,fault_id,vehiclefield.text,Insertworkline[y].inspII_id);
+                   inspectionform=await inspectCreation().createIns_form(inspectionItem,fault_id,vehiclefield.text,isIssue,vehicleId,Insertworkline[y].inspIF_edit_id);
+                   inspectionSubmit=await inspectCreation().createIns_Submit(inspectionform,vehiclefield.text,Insertworkline[y].insp_item);
+                   resultIssue=await faultCreation(). createIssues(Insertworkline[y].resolving,Insertworkline[y].due_date,inspectionSubmit,fault_id,vehiclefield.text,isIssue,Insertworkline[y].start_at,Insertworkline[y].summary,Insertworkline[y].issue_id);
                    resultWorkLine=await f_Service(). createWorkLine(Insertworkline[y].start_at,Insertworkline[y].labor_wol,Insertworkline[y].parts_wol,Insertworkline[y].subtotal_wol,resultIssue,vehiclefield.text,Insertworkline[y].work_order_status,Insertworkline[y].work_id_item);
                    workLineList.add(resultWorkLine);
                    issueList.add(resultIssue); 

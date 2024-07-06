@@ -1843,15 +1843,15 @@ void totalCalc(){
                 for(var i=0;i<Insertworkline[y].data_collect.length;i++)
                 { 
                   
-                  String faulty =await f_Service(). createFaults(vehiclefield.text,Insertworkline[y].data_collect[i][0],Insertworkline[y].data_collect[i][2],ref,"");
+                  String faulty =await faultCreation(). createFaults(vehiclefield.text,Insertworkline[y].data_collect[i][0],Insertworkline[y].data_collect[i][2],ref,"");
                   fault_id.add(faulty);
 
                 }
                                                                   
-                   inspectionItem=await f_Service().createInspect(Insertworkline[y].insp_stats,fault_id,vehiclefield.text,"");
-                   inspectionform=await f_Service().createIns_form(inspectionItem,fault_id,vehiclefield.text,isIssue,vehicleId,"");
-                   inspectionSubmit=await f_Service().createIns_Submit(inspectionform,vehiclefield.text,"");
-                   resultIssue=await f_Service(). createIssues(Insertworkline[y].resolving,Insertworkline[y].due_date,inspectionSubmit,fault_id,vehiclefield.text,isIssue,Insertworkline[y].start_at,Insertworkline[y].summary,"");
+                   inspectionItem=await inspectCreation().createInspect(Insertworkline[y].insp_stats,fault_id,vehiclefield.text,"");
+                   inspectionform=await inspectCreation().createIns_form(inspectionItem,fault_id,vehiclefield.text,isIssue,vehicleId,"");
+                   inspectionSubmit=await inspectCreation().createIns_Submit(inspectionform,vehiclefield.text,"");
+                   resultIssue=await faultCreation(). createIssues(Insertworkline[y].resolving,Insertworkline[y].due_date,inspectionSubmit,fault_id,vehiclefield.text,isIssue,Insertworkline[y].start_at,Insertworkline[y].summary,"");
                    resultWorkLine=await f_Service(). createWorkLine(Insertworkline[y].start_at,Insertworkline[y].labor_wol,Insertworkline[y].parts_wol,Insertworkline[y].subtotal_wol,resultIssue,vehiclefield.text,Insertworkline[y].work_order_status,"");
                    workLineList.add(resultWorkLine);
                    issueList.add(resultIssue);
@@ -1927,7 +1927,7 @@ class _SplashScreenState extends ConsumerState<WorkOrderPage> {
 
     Future<List<Map<String,dynamic>>> fetchItem(String? category) async
     {
-    var fuelFinder = f_Service();
+    var fuelFinder = faultCreation();
     return await fuelFinder.listing_fault(category);
 
     }
@@ -2298,339 +2298,7 @@ class f_Service
 
  }
 
-  Future<List<Map<String,dynamic>>>  listing_fault(String? categories) async
- {  print('data list');
-    UserDetail userDetail = UserDetail();
-    List<String> userDetails = userDetail.getUserDetails();
-    String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-
-     http.Response response;
-     var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"list_of_value_id":"lval-bb8524f089084a03859520e38aee6d8f",'+
-    '"action":"LIST_VALUE_ITEMS_FILTER_REFCODE",'+
-    '"ref_code":"$categories",'+
-    '"details":["code","value","display_value","ref_code"]'+
-  '}');
-
-     Map<String, String> headersModified = {};
-    if (userDetails.isNotEmpty) {
-      headersModified['cookie'] = userDetails[3];
-
-    }
-
-     response = await http.get(Uri.parse('https://lawanow.com//bims-web/ListOfValue?param=$usell'), headers: headersModified);
-
-      if (response.statusCode == 200){
-         Map<String, dynamic> results = json.decode(response.body);
-         print('result $results');
-         List<Map<String,dynamic>> item_faulty = [];
-         var result =results['results'];
-          for (var item in result) {
-          Map<String,dynamic> displayValue = item;
-          item_faulty.add(displayValue);
-        }
-        return item_faulty;
-         
-      }
-      else
-      {
-        print('unsuccssful');
-        throw Exception('Failed to fetch categories');
-      }
-
-   
-
- }
-
- Future<String> createFaults (String title,String? category,Map <String,dynamic> cate_item , WidgetRef ref,String fault_id)async
- {
-   print("cate_item");
-   print(cate_item);
-   print(category);
-   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
-   String selectedValueWithDate = 'FT $title $currentDate';
-   UserDetail userDetail = UserDetail();
-   List<String> userDetails = userDetail.getUserDetails();
-   String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-    http.Response response;
-    var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"action":"SAVE_ITEM",'+
-    '"metadata":{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$fault_id","title":"'+selectedValueWithDate+'","start_occured_at":"","last_occurred_at":"","notes":"","fault_category":{"code":"$category","value":"$category","display":"$category"},"fault_items":[{"code":"${cate_item['code']}","value":"${cate_item['value']}","display":"${cate_item['display_value']}"}]}'+
-  '}');
-
- print(usell);
-  Map<String, String> headersModified = {};
-  if (userDetails.isNotEmpty) {
-    headersModified['cookie'] = userDetails[3];
-  }
-
-    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
-
-    if (response.statusCode == 200) {
-      
-       Map<String, dynamic> result = json.decode(response.body);
-        print(result);
-        if (result['success'] == true){
-          // await formService().keepFault_id(result['item_id']);
-          return result['item_id'];
-
-        }
-        else
-        {
-           throw Exception('Error: ${result['message']}');
-        }
-      
-
-    }
-    else
-    {
-      print('no save');
-      return "";
-      
-    }
-
- }
-
-  Future<String> createIssues (String? hasResolve,String dueDate,String submit_form,List fault,String? issue_title,String? issued_id,String? startAt,String? summary,String status)async
- { bool resolve=true;
-  if(hasResolve =="No")
-  {
-    resolve =false;
-  }
-   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
-   String selectedValueWithDate = 'ISU $issue_title $currentDate';
-   UserDetail userDetail = UserDetail();
-  List<String> userDetails = userDetail.getUserDetails();
-  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-
-   List faulty_yy=[];
-
-   for (String faul in fault) {
-      String adding_fault='{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$faul","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","start_occured_at":"","fault_category":"","fault_items":[]}';
-      faulty_yy.add(adding_fault);
-
-   
-  }
-  String combinedString = faulty_yy.join(',');
-    http.Response response;
-    var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"action":"SAVE_ITEM",'+
-    '"metadata":{"item_type_id":"ityp-b54379e2a45c42c1818576551720422f","item_id":"$status","title":"'+selectedValueWithDate+'","Summary":"$summary","notes":"","is_resolved":{"code":"$resolve","value":"$resolve","display":"$hasResolve"},"reported_at":"$startAt","reported_by":"$issued_id","item_type_id_reported_by":"","disp_reported_by":"","due_meter_value":0,"due_soon_at":"$dueDate","submitted_inspection_form_id":"$submit_form","item_type_id_submitted_inspection_form_id":"ityp-9a8b8e484a2d4527873924bcf95f62cc","disp_submitted_inspection_form_id":"","fault_object":[$combinedString]}'+
-  '}');
-
-
-  Map<String, String> headersModified = {};
-  if (userDetails.isNotEmpty) {
-    headersModified['cookie'] = userDetails[3];
-  }
-
-    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
-
-    if (response.statusCode == 200) {
-      
-       Map<String, dynamic> result = json.decode(response.body);
-        print(result);
-        if (result['success'] == true){
-          return result['item_id'];
-
-        }
-        else
-        {
-           throw Exception('Error: ${result['message']}');
-        }
-      
-
-    }
-    else
-    {
-      return "";
-    }
-
- }
-
-   Future<String> createInspect (String? status,List fault,String? fault_title,String insp_edit_id)async
- { print('insp_edit_id $insp_edit_id');
-   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
-   String selectedValueWithDate = 'ISP $fault_title $currentDate';
-   String code="";
-   String value="";
-   if(status =="Passed")
-   {
-    code="01";
-    value="IS01";
-
-   }
-   else if(status =="Failed")
-   { 
-    code="02";
-    value="IS02";
-
-   }
-   else
-   {
-    code="03";
-    value="IS03";
-   }
-
-
-   UserDetail userDetail = UserDetail();
-  List<String> userDetails = userDetail.getUserDetails();
-  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-
-   
-   List faulty_yy=[];
-
-    for (String faul in fault) {
-      String adding_fault='{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$faul","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","start_occured_at":"","fault_category":"","fault_items":[],"last_occurred_at":""}';
-      faulty_yy.add(adding_fault);
-
-   
-  }
-  String combinedString = faulty_yy.join(',');
-  print(combinedString);
-    http.Response response;
-    var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"action":"SAVE_ITEM",'+
-    '"metadata":{"item_type_id":"ityp-f345ae8638284fcb8c0daace82fbb894","item_id":"$insp_edit_id","item_number":"","title":"abc1234","inspection_status":{"code":"$code","value":"$value","display":"$status"},"notes":"","fault_object":[$combinedString]}'+
-  '}');
-  print('usell');
-  print(usell);
-
-
-  Map<String, String> headersModified = {};
-  if (userDetails.isNotEmpty) {
-    headersModified['cookie'] = userDetails[3];
-  }
-
-    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
-
-    if (response.statusCode == 200) {
-      
-       Map<String, dynamic> result = json.decode(response.body);
-        print(result);
-        if (result['success'] == true){
-          return result['item_id'];
-
-        }
-        else
-        {
-           throw Exception('Error: ${result['message']}');
-        }
-      
-
-    }
-    else
-    {
-      print('failed');
-      return "";
-    }
-
- }
-
-    Future<String> createIns_form(String? id_ins_item,List fault,String? insp_title,String? issue_id,String? vehicle_id,String insp_id)async
- { 
-   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
-   String selectedValueWithDate = 'ISP_FORM $insp_title $currentDate';
-   UserDetail userDetail = UserDetail();
-  List<String> userDetails = userDetail.getUserDetails();
-  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-
-   List faulty_yy=[];
-
-   for (String faul in fault) {
-      String adding_fault='{"title":"","item_id":"$faul","fault_items":[],"item_number":"","item_type_id":"ityp-92b0896128b4486a8843960a230e9096","fault_category":{"code":"","value":"","display":""},"item_type_code":"","last_occurred_at":null,"start_occured_at":null}';
-      faulty_yy.add(adding_fault);
-
-   
-  }
-  String combinedString = faulty_yy.join(',');
-
-    http.Response response;
-    var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"action":"SAVE_ITEM",'+
-    '"metadata":{"item_type_id":"ityp-fea3de650d1b46a7808608ed0c003d62","item_id":"$insp_id","item_number":"","title":"$selectedValueWithDate","notes":"","contact_name":"$issue_id","item_type_id_contact_name":"","disp_contact_name":"","vehicle_id":"$vehicle_id","item_type_id_vehicle_id":"","disp_vehicle_id":"",'+
-    '"inspection_items":[{"item_type_id":"ityp-f345ae8638284fcb8c0daace82fbb894","item_id":"$id_ins_item","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","inspection_status":"","fault_object":[$combinedString],"notes":""}]}'+
-  '}');
-
-
-  Map<String, String> headersModified = {};
-  if (userDetails.isNotEmpty) {
-    headersModified['cookie'] = userDetails[3];
-  }
-
-    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
-
-    if (response.statusCode == 200) {
-      
-       Map<String, dynamic> result = json.decode(response.body);
-        print(result);
-        if (result['success'] == true){
-          return result['item_id'];
-
-        }
-        else
-        {
-           throw Exception('Error: ${result['message']}');
-        }
-      
-
-    }
-    else
-    {
-      print('failed insp form');
-      return "";
-    }
-
- }
-
-     Future<String> createIns_Submit(String? id_ins_form,String? submit_title,String id_it)async
- { 
-   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
-   String selectedValueWithDate = 'SUB_ISP $submit_title $currentDate';
-   UserDetail userDetail = UserDetail();
-  List<String> userDetails = userDetail.getUserDetails();
-  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
-    http.Response response;
-    var usell = Uri.encodeQueryComponent('{'+
-    '"bims_access_id":"$ifleetData",'+
-    '"action":"SAVE_ITEM",'+
-    '"metadata":{"item_type_id":"ityp-9a8b8e484a2d4527873924bcf95f62cc","item_id":"","item_number":"","title":"$selectedValueWithDate","submitted_at":"","failed_items":0,"duration_in_hrs":0,"longitude":"","latitude":"","submitted_latitude":"","submitted_longitude":"","inspection_form":"$id_ins_form","item_type_id_inspection_form":"ityp-fea3de650d1b46a7808608ed0c003d62","disp_inspection_form":""}'+
-  '}');
-
-
-  Map<String, String> headersModified = {};
-  if (userDetails.isNotEmpty) {
-    headersModified['cookie'] = userDetails[3];
-  }
-
-    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
-
-    if (response.statusCode == 200) {
-      
-       Map<String, dynamic> result = json.decode(response.body);
-        print(result);
-        if (result['success'] == true){
-          return result['item_id'];
-
-        }
-        else
-        {
-           throw Exception('Error: ${result['message']}');
-        }
-      
-
-    }
-    else
-    {
-      return "";
-    }
-
- }
+ 
 
   Future<String> createWorkLine(String? startAt,String? labor,double part,double sub,String? id_issue,String? work_title,String? status,String work_id)async
  { 
@@ -3089,6 +2757,344 @@ class insertworkline {
 
    insertworkline({required this.labor_wol,required this.parts_wol,required this.subtotal_wol,required this.start_at,required this.work_order_status,required this.resolving,required this.drop,required this.due_date,required this.insp_stats,required this.summary,required this.data_collect,required this.inspIF_edit_id,required this.inspII_id,required this.insp_item,required this.issue_id,required this.work_id_item});   
 
+}
+
+class faultCreation{
+   Future<List<Map<String,dynamic>>>  listing_fault(String? categories) async
+ {  print('data list');
+    UserDetail userDetail = UserDetail();
+    List<String> userDetails = userDetail.getUserDetails();
+    String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+
+     http.Response response;
+     var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"list_of_value_id":"lval-bb8524f089084a03859520e38aee6d8f",'+
+    '"action":"LIST_VALUE_ITEMS_FILTER_REFCODE",'+
+    '"ref_code":"$categories",'+
+    '"details":["code","value","display_value","ref_code"]'+
+  '}');
+
+     Map<String, String> headersModified = {};
+    if (userDetails.isNotEmpty) {
+      headersModified['cookie'] = userDetails[3];
+
+    }
+
+     response = await http.get(Uri.parse('https://lawanow.com//bims-web/ListOfValue?param=$usell'), headers: headersModified);
+
+      if (response.statusCode == 200){
+         Map<String, dynamic> results = json.decode(response.body);
+         print('result $results');
+         List<Map<String,dynamic>> item_faulty = [];
+         var result =results['results'];
+          for (var item in result) {
+          Map<String,dynamic> displayValue = item;
+          item_faulty.add(displayValue);
+        }
+        return item_faulty;
+         
+      }
+      else
+      {
+        print('unsuccssful');
+        throw Exception('Failed to fetch categories');
+      }
+
+   
+
+ }
+
+ Future<String> createFaults (String title,String? category,Map <String,dynamic> cate_item , WidgetRef ref,String fault_id)async
+ {
+   print("cate_item");
+   print(cate_item);
+   print(category);
+   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
+   String selectedValueWithDate = 'FT $title $currentDate';
+   UserDetail userDetail = UserDetail();
+   List<String> userDetails = userDetail.getUserDetails();
+   String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+    http.Response response;
+    var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"action":"SAVE_ITEM",'+
+    '"metadata":{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$fault_id","title":"'+selectedValueWithDate+'","start_occured_at":"","last_occurred_at":"","notes":"","fault_category":{"code":"$category","value":"$category","display":"$category"},"fault_items":[{"code":"${cate_item['code']}","value":"${cate_item['value']}","display":"${cate_item['display_value']}"}]}'+
+  '}');
+
+ print(usell);
+  Map<String, String> headersModified = {};
+  if (userDetails.isNotEmpty) {
+    headersModified['cookie'] = userDetails[3];
+  }
+
+    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
+
+    if (response.statusCode == 200) {
+      
+       Map<String, dynamic> result = json.decode(response.body);
+        print(result);
+        if (result['success'] == true){
+          // await formService().keepFault_id(result['item_id']);
+          return result['item_id'];
+
+        }
+        else
+        {
+           throw Exception('Error: ${result['message']}');
+        }
+      
+
+    }
+    else
+    {
+      print('no save');
+      return "";
+      
+    }
+
+ }
+
+  Future<String> createIssues (String? hasResolve,String dueDate,String submit_form,List fault,String? issue_title,String? issued_id,String? startAt,String? summary,String status)async
+ { bool resolve=true;
+  if(hasResolve =="No")
+  {
+    resolve =false;
+  }
+   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
+   String selectedValueWithDate = 'ISU $issue_title $currentDate';
+   UserDetail userDetail = UserDetail();
+  List<String> userDetails = userDetail.getUserDetails();
+  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+
+   List faulty_yy=[];
+
+   for (String faul in fault) {
+      String adding_fault='{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$faul","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","start_occured_at":"","fault_category":"","fault_items":[]}';
+      faulty_yy.add(adding_fault);
+
+   
+  }
+  String combinedString = faulty_yy.join(',');
+    http.Response response;
+    var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"action":"SAVE_ITEM",'+
+    '"metadata":{"item_type_id":"ityp-b54379e2a45c42c1818576551720422f","item_id":"$status","title":"'+selectedValueWithDate+'","Summary":"$summary","notes":"","is_resolved":{"code":"$resolve","value":"$resolve","display":"$hasResolve"},"reported_at":"$startAt","reported_by":"$issued_id","item_type_id_reported_by":"","disp_reported_by":"","due_meter_value":0,"due_soon_at":"$dueDate","submitted_inspection_form_id":"$submit_form","item_type_id_submitted_inspection_form_id":"ityp-9a8b8e484a2d4527873924bcf95f62cc","disp_submitted_inspection_form_id":"","fault_object":[$combinedString]}'+
+  '}');
+
+
+  Map<String, String> headersModified = {};
+  if (userDetails.isNotEmpty) {
+    headersModified['cookie'] = userDetails[3];
+  }
+
+    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
+
+    if (response.statusCode == 200) {
+      
+       Map<String, dynamic> result = json.decode(response.body);
+        print(result);
+        if (result['success'] == true){
+          return result['item_id'];
+
+        }
+        else
+        {
+           throw Exception('Error: ${result['message']}');
+        }
+      
+
+    }
+    else
+    {
+      return "";
+    }
+
+ }
+}
+
+class inspectCreation{
+  Future<String> createInspect (String? status,List fault,String? fault_title,String insp_edit_id)async
+ { print('insp_edit_id $insp_edit_id');
+   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
+   String selectedValueWithDate = 'ISP $fault_title $currentDate';
+   String code="";
+   String value="";
+   if(status =="Passed")
+   {
+    code="01";
+    value="IS01";
+
+   }
+   else if(status =="Failed")
+   { 
+    code="02";
+    value="IS02";
+
+   }
+   else
+   {
+    code="03";
+    value="IS03";
+   }
+
+
+   UserDetail userDetail = UserDetail();
+  List<String> userDetails = userDetail.getUserDetails();
+  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+
+   
+   List faulty_yy=[];
+
+    for (String faul in fault) {
+      String adding_fault='{"item_type_id":"ityp-92b0896128b4486a8843960a230e9096","item_id":"$faul","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","start_occured_at":"","fault_category":"","fault_items":[],"last_occurred_at":""}';
+      faulty_yy.add(adding_fault);
+
+   
+  }
+  String combinedString = faulty_yy.join(',');
+  print(combinedString);
+    http.Response response;
+    var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"action":"SAVE_ITEM",'+
+    '"metadata":{"item_type_id":"ityp-f345ae8638284fcb8c0daace82fbb894","item_id":"$insp_edit_id","item_number":"","title":"abc1234","inspection_status":{"code":"$code","value":"$value","display":"$status"},"notes":"","fault_object":[$combinedString]}'+
+  '}');
+  print('usell');
+  print(usell);
+
+
+  Map<String, String> headersModified = {};
+  if (userDetails.isNotEmpty) {
+    headersModified['cookie'] = userDetails[3];
+  }
+
+    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
+
+    if (response.statusCode == 200) {
+      
+       Map<String, dynamic> result = json.decode(response.body);
+        print(result);
+        if (result['success'] == true){
+          return result['item_id'];
+
+        }
+        else
+        {
+           throw Exception('Error: ${result['message']}');
+        }
+      
+
+    }
+    else
+    {
+      print('failed');
+      return "";
+    }
+
+ }
+
+    Future<String> createIns_form(String? id_ins_item,List fault,String? insp_title,String? issue_id,String? vehicle_id,String insp_id)async
+ { 
+   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
+   String selectedValueWithDate = 'ISP_FORM $insp_title $currentDate';
+   UserDetail userDetail = UserDetail();
+  List<String> userDetails = userDetail.getUserDetails();
+  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+
+   List faulty_yy=[];
+
+   for (String faul in fault) {
+      String adding_fault='{"title":"","item_id":"$faul","fault_items":[],"item_number":"","item_type_id":"ityp-92b0896128b4486a8843960a230e9096","fault_category":{"code":"","value":"","display":""},"item_type_code":"","last_occurred_at":null,"start_occured_at":null}';
+      faulty_yy.add(adding_fault);
+
+   
+  }
+  String combinedString = faulty_yy.join(',');
+
+    http.Response response;
+    var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"action":"SAVE_ITEM",'+
+    '"metadata":{"item_type_id":"ityp-fea3de650d1b46a7808608ed0c003d62","item_id":"$insp_id","item_number":"","title":"$selectedValueWithDate","notes":"","contact_name":"$issue_id","item_type_id_contact_name":"","disp_contact_name":"","vehicle_id":"$vehicle_id","item_type_id_vehicle_id":"","disp_vehicle_id":"",'+
+    '"inspection_items":[{"item_type_id":"ityp-f345ae8638284fcb8c0daace82fbb894","item_id":"$id_ins_item","item_number":"","title":"","inter_related_ind":false,"selected_checkbox":"","inspection_status":"","fault_object":[$combinedString],"notes":""}]}'+
+  '}');
+
+
+  Map<String, String> headersModified = {};
+  if (userDetails.isNotEmpty) {
+    headersModified['cookie'] = userDetails[3];
+  }
+
+    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
+
+    if (response.statusCode == 200) {
+      
+       Map<String, dynamic> result = json.decode(response.body);
+        print(result);
+        if (result['success'] == true){
+          return result['item_id'];
+
+        }
+        else
+        {
+           throw Exception('Error: ${result['message']}');
+        }
+      
+
+    }
+    else
+    {
+      print('failed insp form');
+      return "";
+    }
+
+ }
+
+     Future<String> createIns_Submit(String? id_ins_form,String? submit_title,String id_it)async
+ { 
+   String currentDate = DateFormat('ddMMyy').format(DateTime.now());
+   String selectedValueWithDate = 'SUB_ISP $submit_title $currentDate';
+   UserDetail userDetail = UserDetail();
+  List<String> userDetails = userDetail.getUserDetails();
+  String ifleetData = userDetails.isNotEmpty ? userDetails[0] : '';
+    http.Response response;
+    var usell = Uri.encodeQueryComponent('{'+
+    '"bims_access_id":"$ifleetData",'+
+    '"action":"SAVE_ITEM",'+
+    '"metadata":{"item_type_id":"ityp-9a8b8e484a2d4527873924bcf95f62cc","item_id":"","item_number":"","title":"$selectedValueWithDate","submitted_at":"","failed_items":0,"duration_in_hrs":0,"longitude":"","latitude":"","submitted_latitude":"","submitted_longitude":"","inspection_form":"$id_ins_form","item_type_id_inspection_form":"ityp-fea3de650d1b46a7808608ed0c003d62","disp_inspection_form":""}'+
+  '}');
+
+
+  Map<String, String> headersModified = {};
+  if (userDetails.isNotEmpty) {
+    headersModified['cookie'] = userDetails[3];
+  }
+
+    response = await http.post(Uri.parse('https://lawanow.com/bims-web/Item?param=$usell'), headers: headersModified,);
+
+    if (response.statusCode == 200) {
+      
+       Map<String, dynamic> result = json.decode(response.body);
+        print(result);
+        if (result['success'] == true){
+          return result['item_id'];
+
+        }
+        else
+        {
+           throw Exception('Error: ${result['message']}');
+        }
+      
+
+    }
+    else
+    {
+      return "";
+    }
+
+ }
 }
 
 Widget  POSeparator(){
