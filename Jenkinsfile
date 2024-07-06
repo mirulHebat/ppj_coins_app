@@ -8,7 +8,7 @@ def configs = Env.getEnviroments(env)
 node {
 
     env.DEBIAN_FRONTEND = 'noninteractive'
-    env.TZ = 'Europe/Istanbul'
+    env.TZ = 'Asia/Singapore'
 
     docker.image("${configs.dockerImage.name}").inside("${configs.dockerImage.arguments}") {
         stage('CHECKOUT') {
