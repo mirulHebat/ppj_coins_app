@@ -8,14 +8,14 @@ class Enviroment {
         def staticEnviroments = [
             git: [
                 branch: "master",
-                url: "https://bitbucket.org/firm/project.git",
-                credentialsId: "jenkins-bitbucket-cloud-credential-id"
+                url: "https://github.com/mirulHebat/ppj_coins_app.git",
+                credentialsId: "cde083e3-cd55-4fd4-8461-27371229505b"
             ],
             artifact: [
                 name: "project"
             ],
             dockerImage: [
-                name: 'instrumentisto/flutter:3.16.6-androidsdk33-r0',
+                name: 'instrumentisto/flutter:3.22.2-androidsdk33-r0',
                 arguments: '--user 0 --volume=$HOME/.ssh:/root/.ssh -v .:/app -w /app',
                 dependencies: ['clang', 'cmake', 'ninja-build', 'pkg-config', 'libgtk-3-dev']
             ],
@@ -27,8 +27,8 @@ class Enviroment {
                 rolloutPercentage: '100'
             ],
             flutter: [
-                version: '3.16.6',
-                dartVersion: '3.2.3',
+                version: '3.22.2',
+                dartVersion: '3.4.3',
                 analyzeOptions: [
                     fatalInfos: false,
                     fatalWarnings: false
