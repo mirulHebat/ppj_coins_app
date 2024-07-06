@@ -31,8 +31,8 @@ node {
 
             uploadToNexusLibrary(configs.nexus)
         }
-        stage('PUBLISH') {
+        /*stage('PUBLISH') {
             publishAndroidLibrary(configs.googlePlay)
-        }
+        }*/
     }
 }
